@@ -19,7 +19,7 @@ import { $activeGatewayProfile, $profiles, normalizeProfileKey } from '@/store/p
 import { $reactionsEnabled, setReactionsEnabled } from '@/store/reactions-enabled'
 import { $toolViewMode, setToolViewMode } from '@/store/tool-view'
 import { $translucency, setTranslucency } from '@/store/translucency'
-import { $zoomPercent, setZoomPercent } from '@/store/zoom'
+import { $zoomPercent, refreshZoomPercent, setZoomPercent } from '@/store/zoom'
 import { getBaseColors, useTheme } from '@/themes/context'
 import { installVscodeThemeFromMarketplace } from '@/themes/install'
 import type { DesktopTheme } from '@/themes/types'
@@ -338,6 +338,15 @@ export function AppearanceSettings() {
   const a = t.settings.appearance
 
   const [query, setQuery] = useState('')
+
+  // The zoom store is lazily initialized (this module is the only importer,
+  // and it lives inside the lazily-loaded SettingsView). The initial zoom.get()
+  // IPC can race with restorePersistedZoomLevel, reading Chromium's baseline
+  // (100%) before the persisted level is reasserted. Re-fetch on mount so the
+  // preset and numeric entry reflect the actually-applied zoom.
+  useEffect(() => {
+    refreshZoomPercent()
+  }, [])
 
   // One box does double duty: filter installed themes live (below), and run a
   // name search against the VS Code Marketplace (the Cmd-K "Install theme…"
